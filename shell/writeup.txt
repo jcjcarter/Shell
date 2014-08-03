@@ -1,0 +1,31 @@
+Eric Kang (EK8), Jayson Carter(JJC7)
+COMP 221 Project 4: Unix Shell
+<3/14/14>
+
+DESCRIPTION
+
+A shell is an interactive command-line interpreter that runs programs on behalf of the user.A shell repeatedly prints a prompt, waits for a command line on stdin, and then carries out some action, as directed by the contents of the command line.  The TSH implementation carries out all of the functionality of a standard shell. The only difference of the TSH is that it recognizes the command quit which terminates the TSH and returns to the parent shell.
+
+DESIGN
+
+For the function eval, there are four variables define at the top of the function which are: *argv[MAXARGS], masking, is_bg, and pid. The *argv[MAXARGS] is a char pointer that holds the input string from the eval function. The variable masking is an integer that is used for signal blocking. Variable is_bg is used as a boolean to determine if a job needs to run in the background. Following the variables is the parseline function which parses the command line and stores the information appropriately into argv. The parseline returns an integer to the is_bg variable which determines if the job needs to run in the background or foreground. The functions sigemptyset, sigaddset, and sigprocmask are used to ensure that SIGCHLD is blocked. We block SIGCHLD before the fork so that we don’t have to worry about the child being reaped before it is even added to jobs. After the check for SIGCHLD, the program steps into other if-statements that execute either foreground operations or background operations.
+
+For the builtin_cmd function, there are four if-statements that check for the built-in command words: “quit”, “jobs”,”fg”, and “bg”. The execute with the highest priority and are always run in the foreground.
+
+For the do_bgfg function, there is error checking to see if the PID or JID is a valid job. When the PID or JID is confirmed, the program steps into either the foreground processes or background processes. The foreground processes sends a signal for the job to continue to completion and a wait signal to ensure that only one job is running in the foreground process. The background processes moves the job to work in the background for it to be executed there.
+
+The waitfg function, has a single while loop which polls the foreground job until it finishes. If the condition determines that a foreground process is still running, it will enter into sleep for one second before polling again.
+
+Since we decided to use execvp, the initpath function was significantly simplified. All we needed to have it do was to save the pathstr into “PATH” as an environmental variable. Setenv would then do the rest of the dirty work.
+
+The sigchld_handler reaps all the child processes that have terminated normally. If the handler detects that there are children that exited abnormally, a call is made to the sigint_handler. If a child is stopped, a call is made to the sigtsp_handler function. If a child exited normally, the job is deleted.
+
+The sigint_handler function, if there is no foreground job running then it does not do anything. If there is a foreground job, the job is terminated. 
+
+The sigtstp_handler function, goes through the foreground job and stops all the processes that are associated with that job.
+
+TESTING STRATEGY
+
+For testing strategies, we went through all the traces and made sure that they matched the tshref. We went back to check for edge cases by using our own tests in our shell. To test for edge cases, an example of what we did was checking processes of running JID’s like having 1,2, and 3 as JID’s. We would type in 4 to see if the JID exists. We also tested for the PID and JID, where JID must be any integer 1 through 16,  and if PID and JID were both actually within our jobs. We also tested to see how the program reacted to incorrect inputs using the tshref as a reference. Another big thing we checked was whether or not the children were being killed and reaped properly. We tested this with the help of gx. We would throw in a bunch of programs (myspins essentially), then proceed to use SIGTSTP or SIGINT to terminate them. Using gx, we would see whether or not they were reaped, or stayed as terminated programs.
+
+
